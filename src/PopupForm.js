@@ -21,10 +21,9 @@ import { useForm } from "react-hook-form";
 import axios from "axios";
 
 const API_KEY = "k-8f7aa4ea-a0c7-42ac-a821-a342d21887fe";
-const ENTITY_AUTHENTICATION_TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnRpdHlJZCI6ImUtYjY2YmNhMjQtZjZjZS00NDg5LWIyZTktZTI0YTkwZTA0ODc3IiwiaWF0IjoxNzE4ODcyODg0fQ.O0DEB_S-dirK4MMa2nm0yqwDhdCtdvTySPGpmCGAqqU";
 const ENTITY_ID = "e-b66bca24-f6ce-4489-b2e9-e24a90e04877";
 const CAMPAIGN_ID = "c-14d4f959-5999-4308-af48-37549b89eec7";
+const campaignVariationId = "cv-d9d30363-2ce8-4793-a7b3-ab34eccdbd71";
 
 function PopupForm({ isOpen, onClose }) {
   const [formFields, setFormFields] = useState([]);
@@ -55,9 +54,13 @@ function PopupForm({ isOpen, onClose }) {
         )
         .then((response) => {
           const data = response.data || [];
-
           if (data.success) {
-            setFormFields(data.data.actions.map((action) => action.title));
+            setFormFields(
+              data.data.actions.map((action) => ({
+                title: action.title,
+                actionId: action.actionId,
+              }))
+            );
           }
         })
         .catch((error) => {
@@ -76,14 +79,27 @@ function PopupForm({ isOpen, onClose }) {
   }, [isOpen, reset, toast]);
 
   const onSubmit = (data) => {
+    const formData = formFields.map((field) => ({
+      title: field.title,
+      actionId: field.actionId,
+      answers: [data[field.title.toLowerCase().split(" ").join("_")]],
+    }));
     setisLoading(true);
     axios
-      .post("https://staging.questapp.com/veirfycampaignaction", data, {
-        headers: {
-          Authorization: `Bearer ${ENTITY_AUTHENTICATION_TOKEN}`,
-          "x-api-key": API_KEY,
-        },
-      })
+      .post(
+        `https://staging.questprotocol.xyz/api/v2/entities/${ENTITY_ID}/campaigns/${CAMPAIGN_ID}/verify`,
+        { actions: formData, campaignVariationId },
+        {
+          headers: {
+            accept: "application/json",
+            apikey: API_KEY,
+            token:
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1LTY1NjAyMzg5LTU0ODgtNGI2Ni1hM2M4LTJiYmQ4OTlmMjcyMSIsImlhdCI6MTcxODk4MDc4NiwiZXhwIjoxNzE5NTg1NTg2fQ.-rG_17y3QBJuwRdTivs-35qRwfqVKdZduLv30E85f48",
+            userid: "u-65602389-5488-4b66-a3c8-2bbd899f2721",
+            "content-type": "application/json",
+          },
+        }
+      )
       .then((response) => {
         toast({
           title: "Form submitted",
@@ -108,7 +124,7 @@ function PopupForm({ isOpen, onClose }) {
 
   return (
     <>
-      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size={"full"}>
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size={"lg"}>
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
@@ -118,24 +134,27 @@ function PopupForm({ isOpen, onClose }) {
               <form>
                 {formFields.map((fieldName, index) => (
                   <FormControl
-                    key={fieldName}
+                    key={fieldName.title}
                     isInvalid={
-                      errors[fieldName.toLowerCase().split(" ").join("_")]
+                      errors[fieldName.title.toLowerCase().split(" ").join("_")]
                     }>
-                    <FormLabel>{fieldName}</FormLabel>
+                    <FormLabel>{fieldName.title}</FormLabel>
                     <Input
                       {...register(
-                        fieldName.toLowerCase().split(" ").join("_"),
+                        fieldName.title.toLowerCase().split(" ").join("_"),
                         {
-                          required: `${fieldName} is required`,
+                          required: `${fieldName.title} is required`,
                         }
                       )}
                     />
-                    {errors[fieldName.toLowerCase().split(" ").join("_")] && (
+                    {errors[
+                      fieldName.title.toLowerCase().split(" ").join("_")
+                    ] && (
                       <span>
                         {
-                          errors[fieldName.toLowerCase().split(" ").join("_")]
-                            .message
+                          errors[
+                            fieldName.title.toLowerCase().split(" ").join("_")
+                          ].message
                         }
                       </span>
                     )}

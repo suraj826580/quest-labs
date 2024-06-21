@@ -1,14 +1,5 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Heading,
-  Container,
-  Text,
-  Button,
-  Stack,
-  Icon,
-  useColorModeValue,
-} from "@chakra-ui/react";
+import { Box, Heading, Container, Text, Button, Stack } from "@chakra-ui/react";
 import PopupForm from "./PopupForm.js";
 
 function App() {
